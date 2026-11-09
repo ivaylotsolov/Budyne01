@@ -1,0 +1,377 @@
+
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pirátská únikovka</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: Georgia, serif;
+    color: #ffe6ad;
+    background:
+      radial-gradient(ellipse at center, #24505a 0%, #102d35 55%, #071820 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+/* Pirátská atmosféra */
+body::before {
+    content: "☠️       ⚓       🏴‍☠️";
+    position: fixed;
+    top: 25px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    font-size: 35px;
+    opacity: .8;
+    pointer-events: none;
+}
+
+body::after {
+    content: "🌊  🌊  🌊  🌊  🌊  🌊  🌊";
+    position: fixed;
+    bottom: 15px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    font-size: 30px;
+    pointer-events: none;
+}
+
+.container {
+    width: 100%;
+    max-width: 720px;
+    padding: 35px;
+    text-align: center;
+    background: linear-gradient(
+        145deg,
+        rgba(88, 53, 25, .97),
+        rgba(37, 29, 19, .98)
+    );
+    border: 5px solid #b78a42;
+    border-radius: 18px;
+    box-shadow: 0 0 40px #000;
+    position: relative;
+}
+
+h1 {
+    color: #ffd477;
+    font-size: 38px;
+    text-shadow: 2px 3px 4px black;
+}
+
+h2 {
+    color: #ffe0a0;
+    font-size: 27px;
+}
+
+p {
+    font-size: 21px;
+    line-height: 1.6;
+}
+
+.station-number {
+    font-size: 17px;
+    color: #e7bd70;
+    letter-spacing: 3px;
+}
+
+.question {
+    margin: 30px 0;
+    padding: 20px;
+    background: rgba(0,0,0,.25);
+    border: 2px dashed #d5a85d;
+    border-radius: 12px;
+}
+
+input {
+    width: 100%;
+    max-width: 350px;
+    padding: 15px;
+    border-radius: 8px;
+    border: 2px solid #c49a55;
+    font-size: 20px;
+    text-align: center;
+    margin: 15px auto;
+}
+
+button {
+    display: block;
+    margin: 15px auto;
+    padding: 15px 25px;
+    border: 2px solid #f5cf83;
+    border-radius: 10px;
+    background: linear-gradient(#d4a34f, #956020);
+    color: #24180b;
+    font-size: 19px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: .2s;
+}
+
+button:hover {
+    transform: scale(1.05);
+    background: #f4ca76;
+}
+
+button:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.message {
+    min-height: 35px;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.hint {
+    color: #e6c88f;
+    font-size: 17px;
+}
+
+.hidden {
+    display: none;
+}
+
+.progress {
+    color: #f8d78e;
+    font-size: 16px;
+    margin-top: 20px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div id="game">
+
+        <div class="station-number" id="stationNumber">
+            STANOVIŠTĚ 1
+        </div>
+
+        <h1>🏴‍☠️ Pirátská výprava</h1>
+
+        <h2 id="stationTitle">Tajemství kapitánovy mapy</h2>
+
+        <p id="story"></p>
+
+        <div class="question">
+            <p id="question"></p>
+
+            <input
+                type="text"
+                id="answer"
+                placeholder="Napiš svou odpověď..."
+                autocomplete="off"
+            >
+
+            <button onclick="checkAnswer()">
+                ⚔️ Ověřit odpověď
+            </button>
+
+            <p class="message" id="message"></p>
+            <p class="hint" id="hint"></p>
+        </div>
+
+        <button id="nextButton" class="hidden"
+                onclick="nextStation()">
+            🏴‍☠️ Pokračovat na další stanoviště ➜
+        </button>
+
+        <div class="progress" id="progress"></div>
+
+    </div>
+
+    <div id="finish" class="hidden">
+        <h1>🏆 GRATULUJEME!</h1>
+        <h2>Poklad je tvůj!</h2>
+        <p>
+            Statečný piráte, dokázal jsi vyřešit
+            všechny úkoly a najít ztracený poklad!
+        </p>
+        <p style="font-size:65px">💰💎🏴‍☠️</p>
+        <p>Jsi opravdový pirátský hrdina!</p>
+        <button onclick="restartGame()">
+            🔄 Hrát znovu
+        </button>
+    </div>
+
+</div>
+
+<script>
+
+const stations = [
+
+{
+    title: "Tajemství kapitánovy mapy",
+    story: "Ahoj, mladý piráte! Kapitán Černovous ukryl poklad na tajemném ostrově. Aby ses k němu dostal, musíš splnit všechny úkoly.",
+    question: "Na lodi je 5 pirátů. Přidají se další 3. Kolik pirátů je nyní na lodi?",
+    answer: "8",
+    hint: "Zkus sečíst 5 + 3."
+},
+
+{
+    title: "Záhadná truhla",
+    story: "Výborně! Našel jsi první část mapy. Před tebou je zamčená truhla a na ní další hádanka.",
+    question: "Co má zuby, ale nikdy nekouše?",
+    answer: "hřeben",
+    hint: "Používáš to při česání vlasů."
+},
+
+{
+    title: "Ostrov lebek",
+    story: "Dorazil jsi na ostrov lebek! Papoušek ti předává další šifru.",
+    question: "Jsem žlutý, svítím na obloze a přes den tě zahřívám. Co jsem?",
+    answer: "slunce",
+    hint: "Najdeš mě na obloze během dne."
+},
+
+{
+    title: "Poslední pirátská zkouška",
+    story: "Už jsi skoro u cíle! Před tebou stojí poslední brána. Vyřeš poslední hádanku a poklad bude tvůj!",
+    question: "Mám ručičky, ale neumím tleskat. Ukazuji ti čas. Co jsem?",
+    answer: "hodiny",
+    hint: "Visím třeba na zdi nebo ležím na stole."
+}
+
+];
+
+let currentStation = 0;
+let unlocked = false;
+
+function showStation() {
+
+    const station = stations[currentStation];
+
+    document.getElementById("stationNumber").innerText =
+        "STANOVIŠTĚ " + (currentStation + 1);
+
+    document.getElementById("stationTitle").innerText =
+        station.title;
+
+    document.getElementById("story").innerText =
+        station.story;
+
+    document.getElementById("question").innerText =
+        station.question;
+
+    document.getElementById("answer").value = "";
+
+    document.getElementById("message").innerText = "";
+
+    document.getElementById("hint").innerText = "";
+
+    document.getElementById("nextButton").classList.add("hidden");
+
+    document.getElementById("progress").innerText =
+        "Stanoviště " + (currentStation + 1) +
+        " z " + stations.length;
+
+    unlocked = false;
+}
+
+function checkAnswer() {
+
+    const userAnswer = document
+        .getElementById("answer")
+        .value.trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+
+    const correctAnswer = stations[currentStation].answer
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+
+    const message = document.getElementById("message");
+
+    if (userAnswer === correctAnswer) {
+
+        message.innerText =
+            "🎉 Správně! Jsi skvělý pirát!";
+
+        message.style.color = "#9cff91";
+
+        unlocked = true;
+
+        const nextButton =
+            document.getElementById("nextButton");
+
+        nextButton.classList.remove("hidden");
+
+        if (currentStation === stations.length - 1) {
+            nextButton.innerText =
+                "💰 Získat pirátský poklad!";
+        }
+
+    } else {
+
+        message.innerText =
+            "⚓ To není správně. Zkus to ještě jednou!";
+
+        message.style.color = "#ff9b83";
+
+        document.getElementById("hint").innerText =
+            "Nápověda: " + stations[currentStation].hint;
+    }
+}
+
+function nextStation() {
+
+    if (!unlocked) return;
+
+    if (currentStation < stations.length - 1) {
+
+        currentStation++;
+
+        showStation();
+
+    } else {
+
+        document.getElementById("game").classList.add("hidden");
+
+        document.getElementById("finish").classList.remove("hidden");
+    }
+}
+
+function restartGame() {
+
+    currentStation = 0;
+
+    document.getElementById("finish").classList.add("hidden");
+
+    document.getElementById("game").classList.remove("hidden");
+
+    showStation();
+}
+
+// Spuštění hry
+showStation();
+
+document.getElementById("answer").addEventListener(
+    "keydown",
+    function(event) {
+        if (event.key === "Enter") {
+            checkAnswer();
+        }
+    }
+);
+
+</script>
+
+</body>
+</html>
